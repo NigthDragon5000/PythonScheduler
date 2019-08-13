@@ -5,6 +5,7 @@ Created on Fri Feb 22 10:59:03 2019
 @author: jcondori
 """
 
+
 import pyodbc
 import os
 from sql_script import executeScriptsFromFile 
@@ -12,6 +13,32 @@ import schedule
 import time
 import win32com.client as win32
 import PySimpleGUI as sg
+#import unittest
+
+
+
+def execute_macro(ruta,macro): 
+    try:
+        xlApp = win32.DispatchEx('Excel.Application')
+        xlsPath = os.path.expanduser(ruta)
+        print(xlsPath)
+        wb = xlApp.Workbooks.Open(Filename=xlsPath)
+        wb.RefreshAll()
+        xlApp.Run(macro)             
+        wb.Save()
+        xlApp.Quit()
+        print("Macro ran successfully!")
+    except:
+        print("Error found while running the excel macro!")
+        #xlApp.Quit()
+
+
+#ruta='D:\\previ.xlsm'
+#macro='macrito'
+#execute_macro(ruta,macro)
+
+# Refresh all pivot tables
+
 
 
 outlook = win32.Dispatch('outlook.application')
@@ -30,8 +57,13 @@ os.chdir("D:/")
 #filename  = 'detalle.sql' # Verificado que funciona
 
 
-filename = sg.PopupGetFile('Please enter a file name')
-hora = sg.PopupGetText('Title', 'Insertar la hora requerida de ejecucion')
+#filename = sg.PopupGetFile('Please enter a file name')
+#hora = sg.PopupGetText('Hora:', 'Insertar la hora requerida de ejecucion')
+#destinatarios=sg.PopupGetText('Destinatarios', 'Ingresar Destinatarios')
+
+filename  = 'pruebitas.sql' # Verificado que funciona
+hora = '18:02'
+destinatarios='jcondori@compartamos.pe'
 
 #
 #layout = [[sg.PopupGetFile('Please enter a file name')],
@@ -50,18 +82,45 @@ hora = sg.PopupGetText('Title', 'Insertar la hora requerida de ejecucion')
 #
 #sg.Popup(event, values[0])
 
+#ruta='D:\excel_macro.xlsm' 
+#macro='macrito'
+
+#execute_macro(ruta,macro)
+
+
+#import pandas as pd
 
 def ejecucion():
     sql_con = pyodbc.connect('driver={SQL Server};SERVER=OF00SRVBDH;Trusted_Connection=True',autocommit=True)
     e=executeScriptsFromFile(filename,sql_con)
+    
+    ''' Borrar'''
+    #f1="select  * from ##pruebitass2"
+    #base1  = pd.read_sql(f1, sql_con)
+    #base1.to_excel("output.xlsx",
+    #         sheet_name='Sheet1')
+    
+    ruta='D:\previ.xlsm'
+    macro='macrito'
+    execute_macro(ruta,macro)
+    
+    ''' '''
+    
     #sql_con.close()
     mail = outlook.CreateItem(0)
-    mail.To = 'jcondori@compartamos.pe'
+    #mail.To = 'jcondori@compartamos.pe;cleto@compartamos.pe'
+    mail.To = destinatarios
     mail.Subject = 'Proceso'
-    if str(e) !='':
+    if str(e) != 'None':
         mail.Body = 'Error: '+str(e)
     else:
         mail.Body = 'Sin errores'
+        
+    ''' Borrar '''
+   # attachment  = "D:\output.xlsx"
+   # mail.Attachments.Add(attachment)
+    ''' '''
+    
     mail.Send()
     return schedule.CancelJob
 
